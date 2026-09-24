@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Red Face Admin</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <main class="admin">
+    <header>
+      <div>
+        <div class="brand">RED FACE PAY</div>
+        <h1>Operations</h1>
+        <p class="muted">Sandbox merchant console.</p>
+      </div>
+      <a href="/" style="color:#f3f1ea">Open terminal</a>
+    </header>
+    <section class="cards" id="cards"></section>
+    <section class="split">
+      <div>
+        <div class="panel" style="margin-bottom:12px">
+          <h2>Merchant</h2>
+          <div id="merchant"></div>
+        </div>
+        <div class="panel">
+          <div class="row"><h2>Transactions</h2><span class="muted" id="tx-count"></span></div>
+          <table>
+            <thead>
+              <tr><th>Time</th><th>Terminal</th><th>Amount</th><th>Method</th><th>Status</th></tr>
+            </thead>
+            <tbody id="tx-body"></tbody>
+          </table>
+          <div id="detail"></div>
+        </div>
+      </div>
+      <div>
+        <div class="panel" style="margin-bottom:12px">
+          <h2>Terminals</h2>
+          <form id="register-form" class="refund">
+            <input name="location" placeholder="Location" required>
+            <input name="device_model" placeholder="Device model" required>
+            <button class="primary" type="submit">Register</button>
+          </form>
+          <p class="muted" id="pairing-note"></p>
+          <div class="terminal-list" id="terminals"></div>
+        </div>
+        <div class="panel" style="margin-bottom:12px" id="terminal-detail-panel">
+          <h2>Terminal detail</h2>
+          <div id="terminal-manage"></div>
+        </div>
+        <div class="panel" style="margin-bottom:12px">
+          <h2>Reconciliation</h2>
+          <div id="recon"></div>
+        </div>
+        <div class="panel">
+          <h2>Settlement</h2>
+          <div id="settlement"></div>
+        </div>
+      </div>
+    </section>
+    <p class="error" id="admin-error" role="status"></p>
+  </main>
+  <script type="module" src="/assets/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Red Face Terminal</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <main class="desk">
+    <section class="device" aria-label="Red Face terminal simulator">
+      <div class="device-top">
+        <span id="clock">--:--</span>
+        <span id="net">ONLINE</span>
+      </div>
+      <div class="screen">
+        <div class="brand">RED FACE PAY</div>
+        <div id="screen"></div>
+        <nav class="nav" id="nav">
+          <button type="button" data-nav="home">Sale</button>
+          <button type="button" data-nav="history">History</button>
+          <button type="button" data-nav="settings">Settings</button>
+        </nav>
+      </div>
+      <div class="device-bottom">
+        <span id="terminal-id">RF-TERM-000001</span>
+        <span id="software-version">v1.0.4</span>
+      </div>
+    </section>
+    <aside class="sandbox">
+      <h2>Sandbox card simulator</h2>
+      <p>These controls stand in for a certified reader. They never collect a card number, PIN, or CVV. Card payments stop when the network is off. Cash still works.</p>
+      <div class="methods">
+        <button class="choice" id="sig-approve" disabled>Approve</button>
+        <button class="choice" id="sig-decline" disabled>Decline</button>
+        <button class="choice" id="sig-timeout" disabled>Timeout</button>
+        <button class="choice" id="sig-network" disabled>Network error</button>
+        <button class="choice" id="sig-provider" disabled>Provider failure</button>
+        <button class="choice" id="sig-cancel" disabled>Cancel card</button>
+        <button class="ghost" id="toggle-net" type="button">Simulate network lost</button>
+        <button class="ghost" id="check-status" type="button" disabled>Check with provider</button>
+      </div>
+      <p class="error" id="sandbox-error" role="status"></p>
+      <form id="pair-form" class="refund">
+        <input id="pair-code" name="code" placeholder="Pairing code" autocomplete="off">
+        <button class="ghost" type="submit">Pair</button>
+      </form>
+    </aside>
+  </main>
+  <script type="module" src="/assets/terminal.js"></script>
+</body>
+</html>
