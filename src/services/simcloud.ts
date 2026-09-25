@@ -148,7 +148,7 @@ export class SimcloudProvider implements ServiceProvider {
       client_reference: input.idempotencyKey.slice(0, 40),
       recipient: input.msisdn,
       send_sms: true,
-      sms_company_name: "Red Face",
+      sms_company_name: "PAY",
     });
     return this.fromElectricity({ http, body }, `electricity:${body.order_id ?? ""}`);
   }
@@ -173,18 +173,21 @@ export class SimcloudProvider implements ServiceProvider {
       const amount = cents(item.sellvalue ?? item.amount);
       const id = `sc-data-${item.product_id}`;
       const display = displayNetwork(String(item.network_name ?? item.network ?? ""));
+      const description = String(item.description ?? "Data");
+      const group = String(item.groupname ?? "Bundles");
       this.catalogue.set(id, {
         service: "DATA",
         networkCode: String(item.network ?? ""),
         displayNetwork: display,
         amountCents: amount,
-        name: String(item.description ?? "Data"),
+        name: description,
       });
       products.push({
         id,
         service_type: "DATA",
         network: display,
-        name: `${display} ${item.description ?? "Data"}`,
+        group,
+        name: description,
         amount,
         amount_display: formatZar(amount),
       });
@@ -215,6 +218,7 @@ export class SimcloudProvider implements ServiceProvider {
           id,
           service_type: "VAS",
           network: null,
+          group: name,
           name,
           amount,
           amount_display: formatZar(amount),

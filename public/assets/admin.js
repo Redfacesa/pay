@@ -238,7 +238,7 @@ function escapeHtml(value) {
 function renderRecon(report) {
   recon.innerHTML = `
     <p>Provider says <strong>${report.provider_count}</strong></p>
-    <p>Red Face says <strong>${report.redface_count}</strong></p>
+    <p>PAY says <strong>${report.redface_count}</strong></p>
     <p>Matched <strong>${report.matched}</strong> · Exceptions <strong>${report.difference}</strong></p>
     ${report.exceptions.length === 0 ? `<p class="ok">No exceptions.</p>` : report.exceptions.map((item) => `<p class="warn">${item.state}<br>${item.detail}</p>`).join("")}`;
 }

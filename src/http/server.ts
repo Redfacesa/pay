@@ -300,7 +300,7 @@ async function dispatch(name: string, ctx: Ctx, actor: Actor, body: Record<strin
     if (type !== "AIRTIME" && type !== "DATA" && type !== "ELECTRICITY" && type !== "VAS" && type !== "SMS") {
       throw new AppError("VALIDATION", "Service type is required.", 400);
     }
-    return { products: services.products(actor, type) };
+    return { products: await services.products(actor, type) };
   }
   if (name === "serviceLookup") return services.lookup(actor, body.msisdn);
   if (name === "meterCheck") return services.checkMeter(actor, body.meter_number);

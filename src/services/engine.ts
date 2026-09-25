@@ -112,6 +112,9 @@ export class ServiceEngine {
     if (input.serviceType === "AIRTIME" && this.provider.name === "simcloud" && (amount < 200 || amount > 99_900)) {
       throw new AppError("VALIDATION", "Airtime must be between R2 and R999.", 400);
     }
+    if (input.serviceType === "ELECTRICITY" && this.provider.name === "simcloud" && (amount < 5_000 || amount > 100_000)) {
+      throw new AppError("VALIDATION", "Electricity must be between R50 and R1000.", 400);
+    }
     const msisdn = input.serviceType === "ELECTRICITY"
       ? input.msisdn
         ? assertMsisdn(input.msisdn)

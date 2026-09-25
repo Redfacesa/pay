@@ -4,6 +4,7 @@ export type ServiceProduct = {
   id: string;
   service_type: ServiceType;
   network: string | null;
+  group: string | null;
   name: string;
   amount: number;
   amount_display: string;

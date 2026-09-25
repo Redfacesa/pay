@@ -55,15 +55,15 @@ export class ServiceSimulator implements ServiceProvider {
   async listProducts(serviceType: ServiceType): Promise<ServiceProduct[]> {
     if (serviceType === "DATA") {
       return [
-        product("dat_mtn_1gb", "DATA", "MTN", "MTN 1GB", 2900),
-        product("dat_voda_1gb", "DATA", "VODACOM", "Vodacom 1GB", 3500),
-        product("dat_cellc_1gb", "DATA", "CELLC", "Cell C 1GB", 2500),
+        product("dat_mtn_1gb", "DATA", "MTN", "1GB", 2900, "Monthly"),
+        product("dat_voda_1gb", "DATA", "VODACOM", "1GB", 3500, "30-day Data Bundle"),
+        product("dat_cellc_1gb", "DATA", "CELLC", "1GB", 2500, "30-day Data Bundle"),
       ];
     }
     if (serviceType === "VAS") {
       return [
-        product("vas_stream_day", "VAS", null, "Streaming day pass", 1500),
-        product("vas_game_10", "VAS", null, "Game voucher R10", 1000),
+        product("vas_stream_day", "VAS", null, "Streaming day pass", 1500, "Streaming"),
+        product("vas_game_10", "VAS", null, "Game voucher", 1000, "Game"),
       ];
     }
     return [];
@@ -175,8 +175,8 @@ function providerCost(amount: number): number {
   return amount - margin;
 }
 
-function product(id: string, serviceType: ServiceType, network: string | null, name: string, amount: number): ServiceProduct {
-  return { id, service_type: serviceType, network, name, amount, amount_display: formatZar(amount) };
+function product(id: string, serviceType: ServiceType, network: string | null, name: string, amount: number, group: string | null = null): ServiceProduct {
+  return { id, service_type: serviceType, network, group, name, amount, amount_display: formatZar(amount) };
 }
 
 function failed(requestId: string, status: "failed" | "provider_error" | "insufficient_balance", reason: string): SubmitResult {

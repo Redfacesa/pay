@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PAY — Partner briefing</title>
+  <style>
+    @page { size: A4; margin: 16mm 16mm 18mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: #1c1915;
+      font-size: 11pt;
+      line-height: 1.45;
+      background: white;
+    }
+    h1, h2, h3 { font-weight: 650; letter-spacing: -0.03em; line-height: 1.15; margin: 0 0 8px; }
+    h1 { font-size: 28pt; }
+    h2 { font-size: 16pt; margin-top: 22px; page-break-after: avoid; }
+    h3 { font-size: 12.5pt; margin-top: 14px; page-break-after: avoid; }
+    p { margin: 0 0 8px; }
+    ul, ol { margin: 0 0 10px; padding-left: 18px; }
+    li { margin: 0 0 4px; }
+    strong { font-weight: 700; }
+    .cover {
+      min-height: 250mm;
+      background: #14110e;
+      color: #f6f1ea;
+      padding: 22mm 18mm;
+      page-break-after: always;
+      position: relative;
+    }
+    .brand { color: #ff8a1e; letter-spacing: 0.18em; font-size: 12pt; font-weight: 750; }
+    .cover h1 { font-size: 42pt; margin: 18mm 0 6mm; max-width: 150mm; }
+    .cover .lede { font-size: 14pt; max-width: 150mm; color: #e7dfd4; }
+    .meta { margin-top: 22mm; color: #cbbfaf; font-size: 11pt; }
+    .meta div { margin-bottom: 4px; }
+    .rule { height: 3px; width: 42mm; background: #ff8a1e; margin: 10mm 0; }
+    .kicker { color: #ff8a1e; font-size: 10pt; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 10pt; page-break-inside: avoid; }
+    th, td { text-align: left; vertical-align: top; padding: 7px 8px; border-bottom: 1px solid #e4ddd2; }
+    th { color: #6d645b; font-size: 9pt; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 650; }
+    .callout {
+      background: #fff6ec;
+      border-left: 4px solid #ff8a1e;
+      padding: 10px 12px;
+      margin: 10px 0 14px;
+      page-break-inside: avoid;
+    }
+    .darkbox {
+      background: #1c1915;
+      color: #f6f1ea;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin: 10px 0 14px;
+      page-break-inside: avoid;
+    }
+    .darkbox strong { color: #ff8a1e; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 12px; }
+    .card { border: 1px solid #eadfce; border-radius: 10px; padding: 10px 12px; page-break-inside: avoid; }
+    .card h3 { margin-top: 0; }
+    .foot { margin-top: 18px; color: #6d645b; font-size: 9pt; }
+    .num { color: #ff8a1e; font-weight: 750; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="brand">PAY</div>
+    <div class="rule"></div>
+    <h1>Partner briefing</h1>
+    <p class="lede">What the software already does, and what the acquiring bank, the payment provider, and a certified card machine still have to supply before PAY can take a real card.</p>
+    <div class="meta">
+      <div>Prepared 25 September 2026</div>
+      <div>For the meeting with the bank, PSP, and device partner</div>
+      <div>Written from the working product, not from a slide deck</div>
+    </div>
+  </section>
+
+  <p class="kicker">Purpose</p>
+  <h2>Why this paper exists</h2>
+  <p>PAY is a cashier system for South African merchants. It takes a sale, it sells airtime, data, electricity, shop vouchers, and SMS, and it keeps a proper payment record. The person building it is the software developer. The person in tomorrow’s meeting is the one who can open the acquiring bank, the payment service provider, and the supply of card machines.</p>
+  <p>A product that feels like a Yoco machine is three things sold as one. PAY already is the third.</p>
+  <div class="grid">
+    <div class="card"><h3>1. Certified hardware</h3><p>A machine that is allowed to read a chip, a tap, and a PIN. That approval sits on the device, not in application code.</p></div>
+    <div class="card"><h3>2. An acquirer or PSP</h3><p>The company that talks to Visa and Mastercard and pays the merchant. PAY does not have this relationship yet.</p></div>
+    <div class="card"><h3>3. The cashier software</h3><p>The screen, the sale, the receipt, the history, the services, and the books. This is what has been built.</p></div>
+    <div class="card"><h3>What the meeting decides</h3><p>Which bank or PSP, which machine to buy, and who holds the merchant agreement. The software can then be plugged into those two.</p></div>
+  </div>
+
+  <p class="kicker">The product</p>
+  <h2>What PAY is</h2>
+  <p>The merchant sees one app. On a phone it is a full-screen app. On a desktop it is a wide web app. The brand on the screen is <strong>PAY</strong>. Under that screen there are two separate rails, and they must stay separate.</p>
+  <table>
+    <thead><tr><th>Rail</th><th>What the customer is buying</th><th>Status today</th></tr></thead>
+    <tbody>
+      <tr><td>Commerce</td><td>A normal sale: cash, and later card, tap, or QR</td><td>Cash is real in the books. Card, tap, and QR are a practice payment until a certified reader and an acquirer are connected.</td></tr>
+      <tr><td>Services</td><td>Airtime, data, electricity, shop vouchers, SMS</td><td>Live on SIMcloud. The merchant’s phone never sees the SIMcloud password.</td></tr>
+    </tbody>
+  </table>
+  <p>A sale and an airtime top-up are not the same record. The customer can pay the merchant R20 in cash, and PAY can separately spend the SIMcloud wallet to put R20 of airtime on a phone. Those two events are stored apart on purpose, so the books can show what the customer paid, what the provider cost, and what PAY keeps.</p>
+
+  <h3>Three amounts, never mixed</h3>
+  <table>
+    <thead><tr><th>Amount</th><th>Meaning</th><th>Today</th></tr></thead>
+    <tbody>
+      <tr><td>Customer amount</td><td>What the person at the counter pays the merchant</td><td>Recorded in rand cents on the sale or the service order</td></tr>
+      <tr><td>Provider cost</td><td>What leaves the SIMcloud wallet, or later the acquirer</td><td>Live airtime is billed at the SIMcloud price</td></tr>
+      <tr><td>PAY margin</td><td>Customer amount minus provider cost</td><td>The practice service rail shows a margin. Live SIMcloud currently sells at the provider price, so the margin is zero until a markup is set</td></tr>
+    </tbody>
+  </table>
+
+  <p class="kicker">Already built</p>
+  <h2>The cashier</h2>
+  <p>The terminal opens on a shift desk: today’s takings, quick amounts, and the latest activity. The merchant can charge R20, R50, R100, R250, or any other amount.</p>
+  <ul>
+    <li><strong>Cash</strong> completes immediately and still works when the network is off.</li>
+    <li><strong>Card and tap</strong> show an on-screen card and the words “Present the card now.” Tapping that card approves a practice payment. Decline, timeout, a lost network, a provider failure, and cancel are also available. No card number, PIN, or CVV is asked for or stored.</li>
+    <li><strong>QR</strong> shows a code that PAY itself draws for that sale. Scanning it does not charge a bank. A real QR scheme replaces that picture later.</li>
+    <li><strong>Receipts</strong> appear on the screen. There is no paper printer yet. A completed slip is headed PAY.</li>
+    <li><strong>History</strong> shows sales and service orders, with the time and the result.</li>
+    <li><strong>Settings</strong> show what the terminal is allowed to take, a go-offline switch, and pairing to a terminal record.</li>
+  </ul>
+  <div class="callout">If the link drops, card, tap, and QR stop. Cash remains. That rule is already in the product. Store-and-forward card payments stay off until an acquirer explicitly allows them.</div>
+
+  <h2>Airtime, data, electricity, vouchers, and SMS</h2>
+  <p>These run through SIMcloud, from the server, with a live wallet. The phone only talks to PAY.</p>
+  <table>
+    <thead><tr><th>Service</th><th>What the merchant does</th><th>What the customer receives</th></tr></thead>
+    <tbody>
+      <tr><td>Airtime</td><td>Any amount from R2 to R999 and a mobile number</td><td>Airtime on that number. There is no voucher and no PIN.</td></tr>
+      <tr><td>Data</td><td>Pick the network, then the bundle family SIMcloud names: daily, weekly, monthly, 30-day, night, WhatsApp, and the rest. Then the size and price.</td><td>The bundle on that number. No voucher.</td></tr>
+      <tr><td>Electricity</td><td>Meter number, the SMS number, and an amount from R50 to R1000. The meter can be checked before buying.</td><td>A token on the on-screen slip, and the same PIN by SMS.</td></tr>
+      <tr><td>Vouchers</td><td>Pick the shop, then the amount</td><td>A voucher code on the slip when SIMcloud finishes.</td></tr>
+      <tr><td>SMS</td><td>A number and a message</td><td>The message on that phone.</td></tr>
+    </tbody>
+  </table>
+  <p>Airtime and data are queued. The screen stays pending until SIMcloud reports delivered or failed, then it changes on its own. A duplicate of the same number and amount inside a few minutes is rejected by SIMcloud rather than sent twice.</p>
+
+  <h2>The merchant desk</h2>
+  <p>A separate operations screen is for the owner, not the cashier. It shows the merchant, today’s sales, each terminal, registration and a one-time pairing code, remote switches for cash, card, tap, and QR, software updates with a health check and rollback, an audit trail, a reconciliation view, a settlement view, and the service wallet. Refunds can be full or partial against a completed card capture in the practice ledger.</p>
+
+  <h2>The books underneath</h2>
+  <p>The payment record is a state machine, not a flag that says paid. A sale moves from created, to initiated, to processing, to authorised, to completed. It can also end declined, failed, cancelled, or unknown. Unknown is reserved for the dangerous case: the provider may already have taken the money, but the answer never came back. Checking status completes that same charge. It does not take the money a second time. The same idempotency key always returns the original sale.</p>
+  <p>Webhooks are checked with a signature. Terminals sign in with their own token, not with the serial number. Production mode refuses to start if the practice passwords are still in place. The database shape is written for PostgreSQL, in rand cents, with tables for businesses, merchants, terminals, devices, orders, payment sessions, transactions, refunds, events, webhooks, idempotency, audit, software releases, and service orders. There is no column for a card number, expiry, CVV, or PIN, and one must not be added.</p>
+  <div class="callout">The running demonstration still keeps those records in memory. Restarting the server clears the sales on the screen. The database file is ready. It is not yet the live store. That is a software task, not a bank task.</div>
+
+  <p class="kicker">The gap</p>
+  <h2>What is still missing before this is a card machine</h2>
+  <p>Nothing in the software reads a chip, talks to Visa or Mastercard, or settles to a bank account. Saying otherwise would be false. The gaps below are the reason for the meeting.</p>
+
+  <h3>From the acquiring bank or PSP</h3>
+  <p>PAY already has a socket for this partner. The engine calls authorise, capture, void, refund, and status. Today the only thing plugged into that socket is the practice provider. The partner needs to name the real one and bring its rules.</p>
+  <ol>
+    <li>The legal name of the acquirer or PSP, and whether they are the merchant of record or PAY is.</li>
+    <li>A sandbox: merchant ID, terminal ID, credentials, and the address PAY’s server will call. Those credentials live on the server, never in the cashier app.</li>
+    <li>The messages for a purchase, a refund, a reversal, and a status check, plus how the result comes back: a webhook, a poll, or both.</li>
+    <li>Test cards that are <em>presented to the certified machine</em>. They are not typed into PAY.</li>
+    <li>The commercial terms: merchant discount, scheme fees, who keeps the float, and when the merchant is paid.</li>
+    <li>Which methods they will actually clear in South Africa: chip, tap, magnetic stripe if still required, and which QR scheme if any.</li>
+    <li>Whether a lost response can be recovered by reference, so PAY’s existing “unknown, then resolve” path can be wired to their status call.</li>
+    <li>The settlement file or API, so end-of-day reconciliation can be checked against their ledger rather than against the practice ledger.</li>
+  </ol>
+
+  <h3>From the card-machine supplier</h3>
+  <p>Two device patterns have been studied. Neither is connected. Both keep the card number and the PIN on the certified device.</p>
+  <table>
+    <thead><tr><th></th><th>Separate certified terminal</th><th>Android smart POS</th></tr></thead>
+    <tbody>
+      <tr><td>Example studied</td><td>myPOS, over Bluetooth, USB, or the local network</td><td>Dspread, the app runs on the machine</td></tr>
+      <tr><td>What PAY would do</td><td>Send the amount and a reference. Wait for approved, declined, cancelled, or busy. Store a masked card number and, if offered, a token for a later charge.</td><td>Call the manufacturer’s certified SDK on the device for the same result.</td></tr>
+      <tr><td>What PAY must not receive</td><td colspan="2">The full card number, the track, the PIN, or the CVV.</td></tr>
+    </tbody>
+  </table>
+  <p>Buying the metal box is not the same as being allowed to take scheme cards. The device vendor and the acquirer do the work that an app developer is not permitted to do:</p>
+  <ul>
+    <li>PCI PIN-entry device approval, and EMV contact and contactless approval, on that exact hardware and kernel.</li>
+    <li>Key injection and terminal configuration, including terminal ID and merchant ID.</li>
+    <li>Activation on the acquirer’s host.</li>
+    <li>A printer, if the merchant wants a paper slip. PAY can already show the slip. It cannot yet drive a printer.</li>
+    <li>A decision on who owns the devices, who replaces them, and who pays for repairs.</li>
+  </ul>
+
+  <h3>What the developer builds once those two answers exist</h3>
+  <p>These are implementation tasks. They should not be started against a guessed bank or a guessed machine.</p>
+  <ol>
+    <li>A payment adapter for the named PSP, using the socket that already exists. The practice card on the screen is then replaced by the real result.</li>
+    <li>A hardware adapter for the named machine, using the hardware socket that already exists. That adapter returns “card presented” and a result. It does not return card data.</li>
+    <li>Move the live records from memory into the PostgreSQL schema so a restart does not wipe the day’s sales.</li>
+    <li>Set a selling price above the SIMcloud cost, so airtime and data have a real margin instead of zero.</li>
+    <li>Optionally tie a cash or card tender to a service order, when the customer is paying the merchant for the airtime in the same gesture. Today those are two steps.</li>
+    <li>Reconcile the day against the acquirer’s settlement, not only against the practice provider.</li>
+    <li>Sign software releases. The update path already downloads, checks a hash, installs, runs a health check, and rolls back. The signature of who published the release is still ahead.</li>
+    <li>Production hosting, with the SIMcloud token and the acquirer secrets only on the server, and with the practice passwords removed. The app already refuses to boot in production if those practice passwords are left in.</li>
+  </ol>
+
+  <p class="kicker">Boundary</p>
+  <h2>How a real card is tested, and what we will not do</h2>
+  <p>There is a temptation to type a test card number and a PIN into the phone to “see if the software works.” That is the wrong test, and PAY will not grow a form for it.</p>
+  <div class="darkbox">
+    <p><strong>The phone is not the card machine.</strong> A card number, expiry, CVV, or PIN typed into PAY would sit on a device that is not certified to hold them. The practice payment on the orange card does not charge a bank, and it does not ask anyone to pay or donate. It only proves the sale, the receipt, the history, and the books.</p>
+  </div>
+  <p>The correct test, once the partner has the sandbox, is physical. The acquirer issues test cards. Someone presents that card to the certified reader. The reader encrypts the tap or the chip and the PIN. The acquirer’s sandbox approves or declines. PAY stores the outcome, the amount, the reference, and at most a masked card number. The same screen the merchant already uses then shows approved or declined, and the operations desk can refund or reconcile it.</p>
+  <p>Until that reader and that sandbox exist, the honest demonstration is the one in the app today: choose an amount, choose card, present the on-screen card, and show the approved slip and the merchant desk.</p>
+
+  <h2>What is explicitly not in this build</h2>
+  <ul>
+    <li>No EMV kernel, no PIN encryption, no key injection, no scheme certification pack.</li>
+    <li>No production acquirer. Paystack is not the plan and is not integrated.</li>
+    <li>No child SIMcloud accounts created from the cashier app, and no provider token in the browser.</li>
+    <li>No paper printer, no signed release authority, and no live database behind the demonstration the meeting will see.</li>
+    <li>No claim that the on-screen card or the on-screen QR is Visa, Mastercard, or a bank QR.</li>
+  </ul>
+
+  <p class="kicker">Tomorrow</p>
+  <h2>Decisions to leave the meeting with</h2>
+  <table>
+    <thead><tr><th>Decision</th><th>Why it unblocks the software</th></tr></thead>
+    <tbody>
+      <tr><td>Which acquirer or PSP</td><td>The adapter cannot be written against a rumour. The contract and the sandbox come from this name.</td></tr>
+      <tr><td>Who signs the merchant agreement</td><td>Settlement, fees, and who is allowed to refund depend on it.</td></tr>
+      <tr><td>Which machine to buy, and how many for a pilot</td><td>Bluetooth terminal beside the phone, or a smart POS that runs PAY on the device. The adapter is different for each.</td></tr>
+      <tr><td>Sandbox date and test cards</td><td>This is how a real approve and decline is proved, on the device, without typing a card number.</td></tr>
+      <tr><td>QR: yes, no, or later, and which scheme</td><td>The demo code is already on the screen. A live code needs their scheme.</td></tr>
+      <tr><td>Whether VAS stays on the SIMcloud wallet</td><td>Airtime already works on that wallet. The card acquirer does not replace it. The meeting should confirm they remain separate.</td></tr>
+      <tr><td>Pilot merchant and settlement account</td><td>One real shop, one account, one device. Not a nationwide rollout on day one.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>A sensible order of work after the meeting</h2>
+  <ol>
+    <li>Confirm the PSP and receive sandbox credentials on the server.</li>
+    <li>Confirm the device and put one unit on the bench.</li>
+    <li>Connect the payment adapter and the hardware adapter. Replace the practice card with that device.</li>
+    <li>Run the acquirer’s test cards on the device. Prove approve, decline, refund, and a lost response that does not double-charge.</li>
+    <li>Turn on the database so the pilot survives a restart.</li>
+    <li>Set the service markup. Keep SIMcloud as the VAS rail.</li>
+    <li>Only then talk about production keys, more devices, and a second merchant.</li>
+  </ol>
+
+  <div class="callout">
+    <p><strong>One sentence for the room.</strong> The cashier, the services, and the books are built. A real card payment starts when this partnership names the acquirer and the certified machine. The software is ready to be plugged into both. It will not pretend to be either of them.</p>
+  </div>
+  <p class="foot">PAY partner briefing · 25 September 2026 · Working product for discussion. Not a certification, not an offer of acquiring, and not a statement that scheme cards are accepted today.</p>
+</body>
+</html>
