@@ -205,3 +205,33 @@ create index payment_events_transaction_idx on payment_events (transaction_id, t
 create index audit_logs_resource_idx on audit_logs (resource, resource_id, timestamp);
 create index update_jobs_terminal_idx on update_jobs (terminal_id, created_at desc);
 create index terminal_logs_terminal_idx on terminal_logs (terminal_id, timestamp desc);
+
+create table service_orders (
+  id text primary key,
+  merchant_id text not null references merchant_accounts (id),
+  terminal_id text not null references terminals (id),
+  customer_reference text,
+  service_type text not null check (service_type in ('AIRTIME', 'DATA', 'ELECTRICITY', 'VAS', 'SMS')),
+  provider text not null,
+  product_name text,
+  network text,
+  msisdn text,
+  meter_number text,
+  amount integer not null,
+  cost integer not null default 0,
+  margin integer not null default 0,
+  currency text not null default 'ZAR',
+  status text not null check (status in (
+    'CREATED', 'SUBMITTED', 'PENDING', 'COMPLETED', 'FAILED', 'PROVIDER_ERROR', 'TIMEOUT'
+  )),
+  provider_reference text,
+  provider_request_id text,
+  voucher text,
+  units text,
+  failure_reason text,
+  idempotency_key text not null,
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+
+create index service_orders_terminal_idx on service_orders (terminal_id, created_at desc);

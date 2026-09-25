@@ -250,6 +250,7 @@ test("http webhook and overview show the paid sale", async () => {
     webhookSecret: "sandbox-webhook-secret",
     adminToken: "sandbox-admin",
     deviceToken: "sandbox-device-rf-term-000001",
+    simcloudToken: "",
   });
   const running = await listen(app, "127.0.0.1", 0);
   try {
@@ -287,7 +288,7 @@ test("http webhook and overview show the paid sale", async () => {
     assert.equal(body.successful, 1);
     const page = await fetch(`http://127.0.0.1:${running.port}/`);
     assert.equal(page.status, 200);
-    assert.match(await page.text(), /RED FACE PAY/);
+    assert.match(await page.text(), /class="brand">PAY</);
   } finally {
     await new Promise<void>((resolve, reject) => {
       running.server.close((error) => (error ? reject(error) : resolve()));

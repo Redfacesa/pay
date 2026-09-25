@@ -70,3 +70,14 @@ COMPLETED → PARTIALLY_REFUNDED → REFUNDED
 `approve`, `decline`, `timeout`, `network_error`, `provider_failure`, `cancel`.
 
 None of these accept or store a PAN, PIN, or CVV.
+
+## Services
+
+Sales stay on the commerce transaction. Airtime, data, electricity, vouchers, and SMS are service orders.
+
+- The terminal calls Red Face only. It never receives a SIMcloud token.
+- `ServiceProvider` is the rail. `ServiceSimulator` implements it when `SIMCLOUD_TOKEN` is empty. A token selects the server-side SIMcloud adapter. The token is never returned to the terminal.
+- A completed R20 airtime order stores customer amount R20.00, provider cost R18.50, and margin R1.50.
+- A provider error records `PROVIDER_ERROR` and does not debit the simulator wallet.
+- The same idempotency key returns the original service order.
+

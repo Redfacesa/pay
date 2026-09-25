@@ -1,5 +1,5 @@
 const screen = document.querySelector("#screen");
-const sandboxError = document.querySelector("#sandbox-error");
+const toast = document.querySelector("#toast");
 const net = document.querySelector("#net");
 const clock = document.querySelector("#clock");
 
@@ -21,6 +21,8 @@ const state = {
     auto_update: true,
   },
   terminal: null,
+  serviceSignal: "success",
+  provider: "simulator",
 };
 
 function money(cents) {
@@ -44,11 +46,48 @@ async function api(path, options = {}) {
   return payload;
 }
 
+let watchTimer = null;
+
+function stopWatch() {
+  if (watchTimer) clearInterval(watchTimer);
+  watchTimer = null;
+}
+
+function pillClass(status) {
+  if (status === "COMPLETED") return "ok";
+  if (status === "PENDING" || status === "SUBMITTED" || status === "TIMEOUT") return "warn";
+  return "bad";
+}
+
+function slipLabel(order) {
+  if (order.status === "PENDING" || order.status === "SUBMITTED") return "PENDING";
+  if (order.status !== "COMPLETED") return order.status;
+  if (order.service_type === "AIRTIME" || order.service_type === "DATA") return "SENT";
+  if (order.service_type === "SMS") return "DELIVERED";
+  if (order.voucher) return "VOUCHER";
+  return "COMPLETED";
+}
+
+function slipNote(order) {
+  const direct = order.service_type === "AIRTIME" || order.service_type === "DATA" || order.service_type === "SMS";
+  if (order.status === "PENDING" || order.status === "SUBMITTED" || order.status === "TIMEOUT") {
+    return "Waiting for SIMcloud. This screen updates by itself.";
+  }
+  if (order.status === "COMPLETED" && direct) {
+    return `Loaded on ${order.msisdn}. No token. The network puts it on the number.`;
+  }
+  if (order.status === "COMPLETED" && order.voucher) {
+    return "Give this slip to the customer. They enter the token.";
+  }
+  return "";
+}
+
 function setError(message) {
-  sandboxError.textContent = message ?? "";
+  toast.textContent = message ?? "";
 }
 
 function renderHome() {
+  stopWatch();
   if (!guardUnlocked()) return;
   state.view = "home";
   markNav("home");
@@ -172,20 +211,34 @@ async function startSale(method) {
 function renderWaiting(sale) {
   state.view = "waiting";
   markNav("home");
-  const label = sale.payment_method === "tap" ? "TAP" : sale.payment_method === "qr" ? "SHOW QR" : "INSERT / TAP / SWIPE";
+  const label = sale.payment_method === "tap" ? "Hold the card here" : sale.payment_method === "qr" ? "Customer scans the code" : "Insert, tap, or swipe";
   screen.innerHTML = `
     <div class="muted">Amount</div>
     <div class="amount small">${sale.amount_display}</div>
     <div class="wait-copy">${label}</div>
-    <p>Waiting for card…</p>
-    <p class="muted">${sale.id}</p>
-    <button class="ghost" id="cancel" type="button">Cancel</button>`;
-  setSignals(true);
+    <p class="muted reader-note">A certified reader is not connected yet. Approve stands in for a successful card. Decline stands in for a refused card.</p>
+    <button class="primary" id="sig-approve" type="button">Approve</button>
+    <button class="ghost" id="sig-decline" type="button">Decline</button>
+    <details class="more">
+      <summary>Other reader results</summary>
+      <div class="methods">
+        <button class="ghost" id="sig-timeout" type="button">Timeout</button>
+        <button class="ghost" id="sig-network" type="button">Network error</button>
+        <button class="ghost" id="sig-provider" type="button">Provider failure</button>
+        <button class="ghost" id="sig-cancel" type="button">Cancel card</button>
+      </div>
+    </details>
+    <button class="ghost" id="cancel" type="button">Cancel sale</button>`;
+  screen.querySelector("#sig-approve").onclick = () => authorize("approve");
+  screen.querySelector("#sig-decline").onclick = () => authorize("decline");
+  screen.querySelector("#sig-timeout").onclick = () => authorize("timeout");
+  screen.querySelector("#sig-network").onclick = () => authorize("network_error");
+  screen.querySelector("#sig-provider").onclick = () => authorize("provider_failure");
+  screen.querySelector("#sig-cancel").onclick = () => authorize("cancel");
   screen.querySelector("#cancel").onclick = async () => {
     try {
       const cancelled = await api(`/api/v1/payment-sessions/${sale.session_id}/cancel`, { method: "POST" });
       state.sale = cancelled;
-      setSignals(false);
       renderResult(cancelled);
     } catch (error) {
       setError(error.message);
@@ -196,7 +249,6 @@ function renderWaiting(sale) {
 function renderResult(sale) {
   state.view = "result";
   markNav("home");
-  setSignals(false);
   const unknown = sale.status === "UNKNOWN";
   const approved = sale.status === "COMPLETED";
   const klass = unknown ? "warn" : approved ? "" : "bad";
@@ -206,13 +258,24 @@ function renderResult(sale) {
     <div class="amount small">${sale.amount_display}</div>
     <p>${sale.id}</p>
     <p class="muted">${sale.merchant_name} · ${sale.terminal_id}</p>
-    ${unknown ? `<p class="warn">The provider may already have taken this payment. Do not start a new sale. Check status.</p>` : ""}
+    ${unknown ? `<p class="warn">The provider may already have taken this payment. Do not start a new sale.</p><button class="primary" id="check-status" type="button">Check status</button>` : ""}
     ${sale.receipt ? `<div class="receipt">${escapeHtml(sale.receipt)}</div>` : ""}
     <button class="primary" id="done" type="button">NEW SALE</button>`;
-  document.querySelector("#check-status").disabled = !unknown;
+  const check = screen.querySelector("#check-status");
+  if (check) {
+    check.onclick = async () => {
+      try {
+        const updated = await api(`/api/v1/transactions/${sale.id}/resolve`, { method: "POST" });
+        state.sale = updated;
+        renderResult(updated);
+        await refresh();
+      } catch (error) {
+        setError(error.message);
+      }
+    };
+  }
   screen.querySelector("#done").onclick = async () => {
     state.sale = null;
-    document.querySelector("#check-status").disabled = true;
     await refresh();
     renderHome();
   };
@@ -222,16 +285,9 @@ function escapeHtml(value) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
-function setSignals(enabled) {
-  for (const id of ["sig-approve", "sig-decline", "sig-timeout", "sig-network", "sig-provider", "sig-cancel"]) {
-    document.querySelector(`#${id}`).disabled = !enabled;
-  }
-}
-
 async function authorize(signal) {
   if (!state.sale?.session_id) return;
   setError("");
-  setSignals(false);
   try {
     const sale = await api(`/api/v1/payment-sessions/${state.sale.session_id}/authorize`, {
       method: "POST",
@@ -242,7 +298,6 @@ async function authorize(signal) {
     renderResult(sale);
     await refresh();
   } catch (error) {
-    setSignals(true);
     setError(error.message);
   }
 }
@@ -268,6 +323,7 @@ function guardUnlocked() {
 }
 
 function renderLock() {
+  stopWatch();
   state.view = "lock";
   markNav("home");
   const status = state.terminal?.status ?? "LOCKED";
@@ -278,28 +334,236 @@ function renderLock() {
 }
 
 async function renderHistory() {
+  stopWatch();
   if (!guardUnlocked()) return;
   state.view = "history";
   markNav("history");
   screen.innerHTML = `<p class="muted">Loading history…</p>`;
-  const payload = await api("/api/v1/transactions");
-  const rows = payload.transactions;
+  const [payload, services] = await Promise.all([api("/api/v1/transactions"), api("/api/v1/services/orders")]);
+  const pending = services.orders.filter((order) => order.status === "PENDING" || order.status === "SUBMITTED" || order.status === "TIMEOUT");
+  if (pending.length > 0) {
+    await Promise.all(pending.map((order) => api(`/api/v1/services/orders/${order.id}/poll`, { method: "POST", body: {} })));
+  }
+  const fresh = pending.length > 0 ? await api("/api/v1/services/orders") : services;
+  const rows = [
+    ...payload.transactions.map((tx) => ({
+      kind: "sale",
+      id: tx.id,
+      title: `${tx.amount_display} · ${tx.payment_method}`,
+      status: tx.status,
+    })),
+    ...fresh.orders.map((order) => ({
+      kind: "service",
+      id: order.id,
+      title: `${order.amount_display} · ${order.service_type}`,
+      status: slipLabel(order),
+    })),
+  ];
   screen.innerHTML = `
     <h2>History</h2>
-    ${rows.length === 0 ? `<p class="muted">No transactions yet.</p>` : rows.map((tx) => `
-      <button class="ghost history-row" type="button" data-id="${tx.id}">
-        <span>${tx.amount_display} · ${tx.payment_method}</span>
-        <span class="muted">${tx.status}</span>
+    ${rows.length === 0 ? `<p class="muted">No transactions yet.</p>` : rows.map((row) => `
+      <button class="ghost history-row" type="button" data-kind="${row.kind}" data-id="${row.id}">
+        <span>${row.title}</span>
+        <span class="muted">${row.status}</span>
       </button>`).join("")}`;
   for (const button of screen.querySelectorAll(".history-row")) {
     button.onclick = async () => {
+      if (button.dataset.kind === "service") {
+        const orders = await api("/api/v1/services/orders");
+        const order = orders.orders.find((item) => item.id === button.dataset.id);
+        if (order) renderServiceResult(order);
+        return;
+      }
       const tx = await api(`/api/v1/transactions/${button.dataset.id}`);
       renderResult(tx);
     };
   }
 }
 
+function renderServices() {
+  stopWatch();
+  if (!guardUnlocked()) return;
+  state.view = "services";
+  markNav("services");
+  const live = state.provider === "simcloud";
+  screen.innerHTML = `
+    <h2>Services</h2>
+    <div class="methods">
+      <button class="choice" type="button" id="svc-airtime">Airtime</button>
+      <button class="choice" type="button" id="svc-data">Data</button>
+      <button class="choice" type="button" id="svc-elec">Electricity</button>
+      <button class="choice" type="button" id="svc-vas">Vouchers</button>
+      <button class="choice" type="button" id="svc-sms">SMS</button>
+    </div>
+    <p class="muted">${live ? "Airtime and data load onto the number. Electricity and vouchers show a token on the slip." : "Practice mode. Airtime and data load onto the number. Electricity and vouchers show a token on the slip."}</p>`;
+  document.querySelector("#svc-airtime").onclick = () => renderAirtime();
+  document.querySelector("#svc-data").onclick = () => renderCatalogue("DATA");
+  document.querySelector("#svc-elec").onclick = () => renderElectricity();
+  document.querySelector("#svc-vas").onclick = () => renderCatalogue("VAS");
+  document.querySelector("#svc-sms").onclick = () => renderSms();
+}
+
+function renderServiceResult(order) {
+  stopWatch();
+  state.view = "service-result";
+  state.watchedOrderId = order.id;
+  markNav("services");
+  const note = slipNote(order);
+  const pin = order.voucher ? `<p class="pin">${order.voucher}</p>` : "";
+  const units = order.units ? `<p>${order.units}</p>` : "";
+  const who = order.msisdn ? `<p>${order.msisdn}</p>` : order.meter_number ? `<p>Meter ${order.meter_number}</p>` : "";
+  screen.innerHTML = `
+    <div class="slip">
+      <div class="status-pill ${pillClass(order.status)}">${slipLabel(order)}</div>
+      <p>${order.product_name ?? order.service_type}${order.network ? ` · ${order.network}` : ""}</p>
+      ${who}
+      <p class="amount">${order.amount_display}</p>
+      ${pin}${units}
+      <p>${note}</p>
+      <p class="muted">${order.provider_reference ?? ""}</p>
+      <p class="muted">${order.id}</p>
+      ${order.failure_reason ? `<p class="bad">${order.failure_reason}</p>` : ""}
+    </div>
+    <button class="ghost" type="button" id="back-services">Services</button>`;
+  document.querySelector("#back-services").onclick = () => renderServices();
+  if (order.status === "PENDING" || order.status === "SUBMITTED" || order.status === "TIMEOUT") {
+    watchTimer = setInterval(() => {
+      if (state.view !== "service-result" || state.watchedOrderId !== order.id) {
+        stopWatch();
+        return;
+      }
+      api(`/api/v1/services/orders/${order.id}/poll`, { method: "POST", body: {} })
+        .then((updated) => {
+          if (updated.status !== order.status || updated.voucher !== order.voucher || updated.provider_reference !== order.provider_reference) {
+            renderServiceResult(updated);
+          }
+        })
+        .catch((error) => setError(error.message));
+    }, 3000);
+  }
+}
+
+async function placeService(body) {
+  const order = await api("/api/v1/services/orders", {
+    method: "POST",
+    headers: { "idempotency-key": key() },
+    body: { ...body, simulation: state.serviceSignal },
+  });
+  renderServiceResult(order);
+}
+
+function renderAirtime() {
+  stopWatch();
+  state.view = "airtime";
+  screen.innerHTML = `
+    <h2>Airtime</h2>
+    <p class="muted">Goes straight onto the number. Any amount from R2 to R999. No voucher.</p>
+    <input id="msisdn" placeholder="Mobile number" inputmode="numeric">
+    <input id="airtime-rand" placeholder="Amount in rand" inputmode="decimal">
+    <button class="primary" type="button" id="send-airtime">Send airtime</button>
+    <div class="methods">
+      <button class="choice" type="button" data-amount="1000">R10</button>
+      <button class="choice" type="button" data-amount="2000">R20</button>
+      <button class="choice" type="button" data-amount="5000">R50</button>
+    </div>
+    <button class="ghost" type="button" id="back-services">Back</button>`;
+  document.querySelector("#back-services").onclick = () => renderServices();
+  const send = (cents) => {
+    placeService({
+      service_type: "AIRTIME",
+      msisdn: document.querySelector("#msisdn").value,
+      amount: cents,
+    }).catch((error) => setError(error.message));
+  };
+  document.querySelector("#send-airtime").onclick = () => {
+    const rands = Number(document.querySelector("#airtime-rand").value);
+    if (!Number.isFinite(rands) || rands < 2 || rands > 999) {
+      setError("Airtime must be between R2 and R999.");
+      return;
+    }
+    send(Math.round(rands * 100));
+  };
+  for (const button of screen.querySelectorAll("[data-amount]")) {
+    button.onclick = () => send(Number(button.dataset.amount));
+  }
+}
+
+async function renderCatalogue(type) {
+  stopWatch();
+  state.view = type.toLowerCase();
+  const payload = await api(`/api/v1/services/products?type=${type}`);
+  screen.innerHTML = `
+    <h2>${type === "DATA" ? "Data" : "Vouchers"}</h2>
+    <input id="msisdn" placeholder="Mobile number" inputmode="numeric">
+    <div class="methods">
+      ${payload.products.length === 0 ? `<p class="muted">No products are available from SIMcloud right now.</p>` : payload.products.map((product) => `
+        <button class="choice" type="button" data-product="${product.id}">${product.name} · ${product.amount_display}</button>`).join("")}
+    </div>
+    <button class="ghost" type="button" id="back-services">Back</button>`;
+  document.querySelector("#back-services").onclick = () => renderServices();
+  for (const button of screen.querySelectorAll("[data-product]")) {
+    button.onclick = () => {
+      placeService({
+        service_type: type,
+        product_id: button.dataset.product,
+        msisdn: document.querySelector("#msisdn").value,
+      }).catch((error) => setError(error.message));
+    };
+  }
+}
+
+function renderElectricity() {
+  stopWatch();
+  state.view = "electricity";
+  screen.innerHTML = `
+    <h2>Electricity</h2>
+    <input id="meter" placeholder="Meter number" inputmode="numeric">
+    <input id="msisdn" placeholder="SMS number for the voucher" inputmode="numeric">
+    <button class="choice" type="button" id="check-meter">Check meter</button>
+    <p id="meter-result" class="muted"></p>
+    <button class="primary" type="button" id="buy-elec" disabled>Buy R150</button>
+    <button class="ghost" type="button" id="back-services">Back</button>`;
+  document.querySelector("#back-services").onclick = () => renderServices();
+  document.querySelector("#check-meter").onclick = async () => {
+    const result = await api("/api/v1/services/meters/check", {
+      method: "POST",
+      body: { meter_number: document.querySelector("#meter").value },
+    });
+    document.querySelector("#meter-result").textContent = result.valid ? `Meter validated · ${result.holder}` : "Meter not found";
+    document.querySelector("#buy-elec").disabled = !result.valid;
+  };
+  document.querySelector("#buy-elec").onclick = () => {
+    placeService({
+      service_type: "ELECTRICITY",
+      meter_number: document.querySelector("#meter").value,
+      msisdn: document.querySelector("#msisdn").value,
+      amount: 15000,
+    }).catch((error) => setError(error.message));
+  };
+}
+
+function renderSms() {
+  stopWatch();
+  state.view = "sms";
+  screen.innerHTML = `
+    <h2>SMS</h2>
+    <input id="msisdn" placeholder="Mobile number" inputmode="numeric">
+    <input id="sms-body" placeholder="Message">
+    <button class="primary" type="button" id="send-sms">Send · R1.00</button>
+    <button class="ghost" type="button" id="back-services">Back</button>`;
+  document.querySelector("#back-services").onclick = () => renderServices();
+  document.querySelector("#send-sms").onclick = () => {
+    placeService({
+      service_type: "SMS",
+      msisdn: document.querySelector("#msisdn").value,
+      message: document.querySelector("#sms-body").value,
+      amount: 100,
+    }).catch((error) => setError(error.message));
+  };
+}
+
 async function renderSettings() {
+  stopWatch();
   state.view = "settings";
   markNav("settings");
   const terminal = await api(`/api/v1/terminals/${state.terminalId}`);
@@ -322,8 +586,52 @@ async function renderSettings() {
     ${job ? `<div class="banner">Update ${job.version}: ${job.status.replaceAll("_", " ")}</div>` : ""}
     ${configRows.map(([label, enabled]) => `<div class="row"><span>${label}</span><span class="${enabled ? "ok" : "bad"}">${enabled ? "On" : "Off"}</span></div>`).join("")}
     <h3>Logs</h3>
-    ${logs.logs.length === 0 ? `<p class="muted">No logs yet.</p>` : logs.logs.slice(-8).map((entry) => `<p class="log ${entry.level === "warn" ? "warn" : "muted"}">${entry.timestamp.slice(11, 19)} ${escapeHtml(entry.message)}</p>`).join("")}`;
+    ${logs.logs.length === 0 ? `<p class="muted">No logs yet.</p>` : logs.logs.slice(-8).map((entry) => `<p class="log ${entry.level === "warn" ? "warn" : "muted"}">${entry.timestamp.slice(11, 19)} ${escapeHtml(entry.message)}</p>`).join("")}
+    <h3>Connection</h3>
+    <p class="muted">Card payments stop when the network is off. Cash still works.</p>
+    <button class="ghost" id="toggle-net" type="button">${state.online ? "Go offline" : "Go online"}</button>
+    <h3>Pair this phone</h3>
+    <form id="pair-form">
+      <input id="pair-code" placeholder="Pairing code" autocomplete="one-time-code" inputmode="text">
+      <button class="ghost" type="submit">Pair</button>
+    </form>`;
+  state.settingsSignature = `${JSON.stringify(terminal.config)}:${terminal.status}:${terminal.software_version}:${job?.status ?? ""}:${state.online}`;
   document.querySelector("#software-version").textContent = `v${terminal.software_version}`;
+  screen.querySelector("#pair-form").onsubmit = async (event) => {
+    event.preventDefault();
+    const code = screen.querySelector("#pair-code").value.trim();
+    const response = await fetch("/api/v1/terminals/pair", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setError(payload.error?.message ?? "Pairing failed");
+      return;
+    }
+    sessionStorage.setItem("redface-device-token", payload.device_token);
+    sessionStorage.setItem("redface-terminal-id", payload.terminal_id);
+    state.token = payload.device_token;
+    state.terminalId = payload.terminal_id;
+    document.querySelector("#terminal-id").textContent = state.terminalId;
+    setError("");
+    const beat = await api(`/api/v1/terminals/${state.terminalId}/heartbeat`, {
+      method: "POST",
+      body: { online: true },
+    });
+    await applyBeat(beat);
+    await refresh();
+    renderHome();
+  };
+  screen.querySelector("#toggle-net").onclick = async () => {
+    state.online = !state.online;
+    const beat = await api(`/api/v1/terminals/${state.terminalId}/heartbeat`, {
+      method: "POST",
+      body: { online: state.online },
+    });
+    await applyBeat(beat);
+  };
 }
 
 async function applyBeat(beat) {
@@ -351,7 +659,11 @@ async function applyBeat(beat) {
   const updating = job && job.status !== "COMPLETED" && job.status !== "ROLLED_BACK";
   if (banner) banner.textContent = updating ? `Software ${job.version}: ${job.status.replaceAll("_", " ")}` : "";
   const signature = `${JSON.stringify(beat.config)}:${beat.status}:${state.online}`;
-  if (state.view === "settings") await renderSettings();
+  const settingsSignature = `${signature}:${beat.software_version}:${job?.status ?? ""}`;
+  if (state.view === "settings" && settingsSignature !== state.settingsSignature) {
+    state.settingsSignature = settingsSignature;
+    await renderSettings();
+  }
   if (state.view === "methods" && signature !== state.methodSignature) {
     state.methodSignature = signature;
     renderMethods();
@@ -363,13 +675,14 @@ function tick() {
 }
 
 async function boot() {
+  const bootstrap = await fetch("/api/v1/sandbox/bootstrap").then((response) => response.json());
+  state.provider = bootstrap.service_provider ?? "simulator";
   const savedToken = sessionStorage.getItem("redface-device-token");
   const savedTerminal = sessionStorage.getItem("redface-terminal-id");
   if (savedToken && savedTerminal) {
     state.token = savedToken;
     state.terminalId = savedTerminal;
   } else {
-    const bootstrap = await fetch("/api/v1/sandbox/bootstrap").then((response) => response.json());
     state.token = bootstrap.device_token;
     state.terminalId = bootstrap.terminal_id;
   }
@@ -377,64 +690,11 @@ async function boot() {
   for (const button of document.querySelectorAll("#nav button")) {
     button.onclick = () => {
       if (button.dataset.nav === "home") renderHome();
+      if (button.dataset.nav === "services") renderServices();
       if (button.dataset.nav === "history") renderHistory().catch((error) => setError(error.message));
       if (button.dataset.nav === "settings") renderSettings().catch((error) => setError(error.message));
     };
   }
-  document.querySelector("#pair-form").onsubmit = async (event) => {
-    event.preventDefault();
-    const code = document.querySelector("#pair-code").value.trim();
-    const response = await fetch("/api/v1/terminals/pair", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ code }),
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      setError(payload.error?.message ?? "Pairing failed");
-      return;
-    }
-    sessionStorage.setItem("redface-device-token", payload.device_token);
-    sessionStorage.setItem("redface-terminal-id", payload.terminal_id);
-    state.token = payload.device_token;
-    state.terminalId = payload.terminal_id;
-    document.querySelector("#terminal-id").textContent = state.terminalId;
-    setError("");
-    const beat = await api(`/api/v1/terminals/${state.terminalId}/heartbeat`, {
-      method: "POST",
-      body: { online: true },
-    });
-    await applyBeat(beat);
-    await refresh();
-    renderHome();
-  };
-  document.querySelector("#sig-approve").onclick = () => authorize("approve");
-  document.querySelector("#sig-decline").onclick = () => authorize("decline");
-  document.querySelector("#sig-timeout").onclick = () => authorize("timeout");
-  document.querySelector("#sig-network").onclick = () => authorize("network_error");
-  document.querySelector("#sig-provider").onclick = () => authorize("provider_failure");
-  document.querySelector("#sig-cancel").onclick = () => authorize("cancel");
-  document.querySelector("#check-status").onclick = async () => {
-    if (!state.sale) return;
-    try {
-      const sale = await api(`/api/v1/transactions/${state.sale.id}/resolve`, { method: "POST" });
-      state.sale = sale;
-      renderResult(sale);
-      await refresh();
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-  document.querySelector("#toggle-net").onclick = async () => {
-    state.online = !state.online;
-    document.querySelector("#toggle-net").textContent = state.online ? "Simulate network lost" : "Restore network";
-    const beat = await api(`/api/v1/terminals/${state.terminalId}/heartbeat`, {
-      method: "POST",
-      body: { online: state.online },
-    });
-    await applyBeat(beat);
-    if (state.view === "methods") renderMethods();
-  };
   setInterval(async () => {
     tick();
     if (!state.token) return;

@@ -6,6 +6,9 @@ import { AppError, isAppError } from "../domain/errors.ts";
 import type { Actor } from "../domain/types.ts";
 import { PaymentEngine } from "../engine/payment-engine.ts";
 import { SandboxProvider } from "../providers/sandbox.ts";
+import { ServiceEngine } from "../services/engine.ts";
+import { SimcloudProvider } from "../services/simcloud.ts";
+import { ServiceSimulator } from "../services/simulator.ts";
 import { actorsForTokens, seed } from "../seed.ts";
 import { MemoryStore } from "../store/memory.ts";
 
@@ -16,10 +19,12 @@ export type AppConfig = {
   webhookSecret: string;
   adminToken: string;
   deviceToken: string;
+  simcloudToken: string;
 };
 
 export type App = {
   engine: PaymentEngine;
+  services: ServiceEngine;
   provider: SandboxProvider;
   actors: Map<string, Actor>;
   config: AppConfig;
@@ -33,8 +38,13 @@ export function createApp(config: AppConfig): App {
     webhookSecret: config.webhookSecret,
     faultInjection: config.paymentEnv !== "production",
   });
+  const serviceProvider = config.simcloudToken
+    ? new SimcloudProvider(config.simcloudToken)
+    : new ServiceSimulator(config.paymentEnv);
+  const services = new ServiceEngine(store, serviceProvider);
   return {
     engine,
+    services,
     provider,
     actors: actorsForTokens(config.adminToken, config.deviceToken),
     config,
@@ -50,15 +60,24 @@ type Ctx = {
 };
 
 export function listen(app: App, host: string, port: number): Promise<{ server: Server; port: number }> {
-  const server = createServer((req, res) => {
+  const onRequest = (req: IncomingMessage, res: ServerResponse) => {
     void handle(req, res, app).catch((error: unknown) => {
       sendError(res, error);
     });
-  });
-  return new Promise((resolve) => {
+  };
+  const server = createServer(onRequest);
+  return new Promise((resolve, reject) => {
+    server.on("error", reject);
     server.listen(port, host, () => {
       const address = server.address();
       const actual = typeof address === "object" && address ? address.port : port;
+      if (host === "0.0.0.0") {
+        const ipv6 = createServer(onRequest);
+        ipv6.on("error", () => {
+          ipv6.close();
+        });
+        ipv6.listen(actual, "::");
+      }
       resolve({ server, port: actual });
     });
   });
@@ -85,7 +104,8 @@ async function handle(req: IncomingMessage, res: ServerResponse, app: App): Prom
       device_token: app.config.deviceToken,
       terminal_id: "RF-TERM-000001",
       merchant_name: "Demo Store",
-      note: "Sandbox credentials. Card numbers, PINs, and CVVs are not accepted.",
+      service_provider: app.services.providerName(),
+      note: "Sandbox credentials. Card numbers, PINs, and CVVs are not accepted. The service provider token stays on the server.",
     });
     return;
   }
@@ -143,6 +163,13 @@ function matchRoute(method: string, pathname: string): { name: string; params: R
     { method: "GET", pattern: "/api/v1/reports/overview", name: "overview" },
     { method: "GET", pattern: "/api/v1/settlements", name: "settlements" },
     { method: "GET", pattern: "/api/v1/reconciliation", name: "reconciliation" },
+    { method: "GET", pattern: "/api/v1/services/health", name: "serviceHealth" },
+    { method: "GET", pattern: "/api/v1/services/products", name: "serviceProducts" },
+    { method: "POST", pattern: "/api/v1/services/lookup", name: "serviceLookup" },
+    { method: "POST", pattern: "/api/v1/services/meters/check", name: "meterCheck" },
+    { method: "POST", pattern: "/api/v1/services/orders/:id/poll", name: "servicePoll" },
+    { method: "POST", pattern: "/api/v1/services/orders", name: "serviceOrder" },
+    { method: "GET", pattern: "/api/v1/services/orders", name: "serviceOrders" },
     { method: "POST", pattern: "/api/v1/webhooks/sandbox", name: "webhook", kind: "webhook" },
   ];
   for (const route of routes) {
@@ -266,6 +293,38 @@ async function dispatch(name: string, ctx: Ctx, actor: Actor, body: Record<strin
   if (name === "overview") return engine.overview(actor);
   if (name === "settlements") return engine.settlements(actor);
   if (name === "reconciliation") return engine.reconciliation();
+  const services = ctx.app.services;
+  if (name === "serviceHealth") return services.providerHealth(actor);
+  if (name === "serviceProducts") {
+    const type = ctx.url.searchParams.get("type");
+    if (type !== "AIRTIME" && type !== "DATA" && type !== "ELECTRICITY" && type !== "VAS" && type !== "SMS") {
+      throw new AppError("VALIDATION", "Service type is required.", 400);
+    }
+    return { products: services.products(actor, type) };
+  }
+  if (name === "serviceLookup") return services.lookup(actor, body.msisdn);
+  if (name === "meterCheck") return services.checkMeter(actor, body.meter_number);
+  if (name === "serviceOrder") {
+    const type = body.service_type;
+    if (type !== "AIRTIME" && type !== "DATA" && type !== "ELECTRICITY" && type !== "VAS" && type !== "SMS") {
+      throw new AppError("VALIDATION", "Service type is required.", 400);
+    }
+    return services.create(
+      actor,
+      {
+        serviceType: type,
+        amount: typeof body.amount === "number" ? body.amount : undefined,
+        msisdn: typeof body.msisdn === "string" ? body.msisdn : undefined,
+        meterNumber: typeof body.meter_number === "string" ? body.meter_number : undefined,
+        productId: typeof body.product_id === "string" ? body.product_id : undefined,
+        message: typeof body.message === "string" ? body.message : undefined,
+        simulation: body.simulation,
+      },
+      key,
+    );
+  }
+  if (name === "servicePoll") return services.poll(actor, ctx.params.id ?? "");
+  if (name === "serviceOrders") return { orders: services.list(actor) };
   throw new AppError("NOT_FOUND", "Not found.", 404);
 }
 

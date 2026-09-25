@@ -1090,7 +1090,7 @@ export class PaymentEngine {
     const approved = transaction.status === "COMPLETED" || transaction.status === "PARTIALLY_REFUNDED" || transaction.status === "REFUNDED";
     const receipt = approved && terminal?.config.receipt_enabled
       ? [
-          "RED FACE PAY",
+          "PAY",
           business?.businessName ?? "Merchant",
           terminal?.location ?? "",
           "",

@@ -16,6 +16,7 @@ import type {
   User,
   WebhookEvent,
 } from "../domain/types.ts";
+import type { ServiceOrder } from "../services/engine.ts";
 import type { Actor } from "../domain/types.ts";
 
 export class MemoryStore {
@@ -36,6 +37,7 @@ export class MemoryStore {
   updateJobs: UpdateJob[] = [];
   logs: TerminalLog[] = [];
   deviceTokens = new Map<string, Actor>();
+  serviceOrders = new Map<string, ServiceOrder>();
   private sequences = new Map<string, number>();
 
   next(prefix: string, width = 6): string {

@@ -243,6 +243,16 @@ function renderRecon(report) {
     ${report.exceptions.length === 0 ? `<p class="ok">No exceptions.</p>` : report.exceptions.map((item) => `<p class="warn">${item.state}<br>${item.detail}</p>`).join("")}`;
 }
 
+function renderServicesPanel(health, orders) {
+  const box = document.querySelector("#services");
+  box.innerHTML = `
+    <p>Provider <strong>${health.provider}</strong> · API ${health.api}</p>
+    <p>Wallet ${health.balance_display}</p>
+    <p class="muted">Airtime ${health.airtime} · Data ${health.data} · Electricity ${health.electricity} · VAS ${health.vas} · SMS ${health.sms}</p>
+    ${orders.length === 0 ? `<p class="muted">No service orders yet.</p>` : orders.slice(0, 6).map((order) => `
+      <p>${order.id} · ${order.service_type} · ${order.amount_display} · ${order.status}${order.margin ? ` · margin ${order.margin_display}` : ""}</p>`).join("")}`;
+}
+
 function renderSettlement(report) {
   settlement.innerHTML = `
     <p>Gross ${report.gross_display}</p>
@@ -254,13 +264,15 @@ function renderSettlement(report) {
 
 async function load() {
   adminError.textContent = "";
-  const [overview, tx, terminalList, report, settle, merchants] = await Promise.all([
+  const [overview, tx, terminalList, report, settle, merchants, health, serviceOrders] = await Promise.all([
     api("/api/v1/reports/overview"),
     api("/api/v1/transactions"),
     api("/api/v1/terminals"),
     api("/api/v1/reconciliation"),
     api("/api/v1/settlements"),
     api("/api/v1/merchants"),
+    api("/api/v1/services/health"),
+    api("/api/v1/services/orders"),
   ]);
   state.transactions = tx.transactions;
   state.terminals = terminalList.terminals;
@@ -273,6 +285,7 @@ async function load() {
   await renderManage();
   renderRecon(report);
   renderSettlement(settle);
+  renderServicesPanel(health, serviceOrders.orders);
 }
 
 async function boot() {
