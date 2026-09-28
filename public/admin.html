@@ -18,50 +18,46 @@
       <a href="/">Open terminal</a>
     </header>
     <section class="cards" id="cards"></section>
-    <section class="split">
-      <div>
-        <div class="panel" style="margin-bottom:12px">
-          <h2>Merchant</h2>
-          <div id="merchant"></div>
-        </div>
-        <div class="panel">
-          <div class="row"><h2>Transactions</h2><span class="muted" id="tx-count"></span></div>
-          <table>
-            <thead>
-              <tr><th>Time</th><th>Terminal</th><th>Amount</th><th>Method</th><th>Status</th></tr>
-            </thead>
-            <tbody id="tx-body"></tbody>
-          </table>
-          <div id="detail"></div>
-        </div>
+    <section class="ops">
+      <div class="panel">
+        <h2>Merchant</h2>
+        <div id="merchant"></div>
       </div>
-      <div>
-        <div class="panel" style="margin-bottom:12px">
-          <h2>Terminals</h2>
-          <form id="register-form" class="refund">
-            <input name="location" placeholder="Location" required>
-            <input name="device_model" placeholder="Device model" required>
-            <button class="primary" type="submit">Register</button>
-          </form>
-          <p class="muted" id="pairing-note"></p>
-          <div class="terminal-list" id="terminals"></div>
-        </div>
-        <div class="panel" style="margin-bottom:12px" id="terminal-detail-panel">
-          <h2>Terminal detail</h2>
-          <div id="terminal-manage"></div>
-        </div>
-        <div class="panel" style="margin-bottom:12px">
-          <h2>Services</h2>
-          <div id="services"></div>
-        </div>
-        <div class="panel" style="margin-bottom:12px">
-          <h2>Reconciliation</h2>
-          <div id="recon"></div>
-        </div>
-        <div class="panel">
-          <h2>Settlement</h2>
-          <div id="settlement"></div>
-        </div>
+      <div class="panel">
+        <h2>Terminals</h2>
+        <form id="register-form" class="form-grid">
+          <input name="location" placeholder="Location" required>
+          <input name="device_model" placeholder="Device model" required>
+          <button class="primary" type="submit">Register</button>
+        </form>
+        <p class="muted" id="pairing-note"></p>
+        <div class="terminal-list" id="terminals"></div>
+      </div>
+      <div class="panel ops-tx">
+        <div class="row"><h2>Transactions</h2><span class="muted" id="tx-count"></span></div>
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Terminal</th><th>Amount</th><th>Method</th><th>Status</th></tr>
+          </thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+        <div id="detail"></div>
+      </div>
+      <div class="panel ops-detail" id="terminal-detail-panel">
+        <h2>Terminal detail</h2>
+        <div id="terminal-manage"></div>
+      </div>
+      <div class="panel">
+        <h2>Services</h2>
+        <div id="services"></div>
+      </div>
+      <div class="panel">
+        <h2>Reconciliation</h2>
+        <div id="recon"></div>
+      </div>
+      <div class="panel">
+        <h2>Settlement</h2>
+        <div id="settlement"></div>
       </div>
     </section>
     <p class="error" id="admin-error" role="status"></p>

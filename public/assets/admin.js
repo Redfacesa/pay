@@ -162,34 +162,42 @@ async function renderManage() {
   const health = detailView.health;
   const software = detailView.software;
   terminalManage.innerHTML = `
-    <h3>${detailView.id}</h3>
-    <p><span class="tag ${statusClass(detailView.status)}">${detailView.status}</span> · v${detailView.software_version}</p>
-    <p class="muted">${detailView.merchant_name} · ${detailView.device_model}</p>
-    <p class="muted">Last heartbeat ${health.last_heartbeat_seconds === null ? "never" : `${health.last_heartbeat_seconds}s ago`}</p>
-    <h4>Health</h4>
-    <div class="row"><span>Network</span><span class="${statusClass(health.network)}">${health.network}</span></div>
-    <div class="row"><span>Application</span><span>${health.application}</span></div>
-    <div class="row"><span>Backend</span><span>${health.backend}</span></div>
-    <div class="row"><span>Battery</span><span>${health.battery_percent}%</span></div>
-    <h4>Software</h4>
-    <p>Current ${software.current_version}</p>
-    <p class="muted">${software.available_version ? `Available ${software.available_version} · ${software.update_status}` : software.update_status}</p>
-    <h4>Configuration</h4>
-    <form id="config-form">
-      ${flags.map(([keyName, label]) => `<label class="check"><input type="checkbox" name="${keyName}" ${detailView.config[keyName] ? "checked" : ""}> ${label}</label>`).join("")}
-      <button class="primary" type="submit">Save configuration</button>
-    </form>
-    <form id="release-form" class="refund">
-      <input name="version" placeholder="1.0.5" required>
-      <input name="notes" placeholder="Release notes" required>
-      <button class="primary" type="submit">Publish update</button>
-    </form>
-    <div class="actions">
-      <button class="ghost" id="revoke-btn" type="button">Revoke</button>
-    </div>
-    <h4>History</h4>
-    ${(detailView.audit || []).slice(-8).map((entry) => `<p class="log muted">${entry.timestamp.slice(11, 19)} ${escapeHtml(entry.action)}</p>`).join("") || `<p class="muted">No audit yet.</p>`}
-    ${(detailView.logs || []).slice(-6).map((entry) => `<p class="log ${entry.level === "warn" ? "warn" : "muted"}">${escapeHtml(entry.message)}</p>`).join("")}`;
+    <div class="detail-grid">
+      <div>
+        <h3>${detailView.id}</h3>
+        <p><span class="tag ${statusClass(detailView.status)}">${detailView.status}</span> · v${detailView.software_version}</p>
+        <p class="muted">${detailView.merchant_name} · ${detailView.device_model}</p>
+        <p class="muted">Last heartbeat ${health.last_heartbeat_seconds === null ? "never" : `${health.last_heartbeat_seconds}s ago`}</p>
+        <h4>Health</h4>
+        <div class="row"><span>Network</span><span class="${statusClass(health.network)}">${health.network}</span></div>
+        <div class="row"><span>Application</span><span>${health.application}</span></div>
+        <div class="row"><span>Backend</span><span>${health.backend}</span></div>
+        <div class="row"><span>Battery</span><span>${health.battery_percent}%</span></div>
+        <h4>Software</h4>
+        <p>Current ${software.current_version}</p>
+        <p class="muted">${software.available_version ? `Available ${software.available_version} · ${software.update_status}` : software.update_status}</p>
+      </div>
+      <div>
+        <h4>Configuration</h4>
+        <form id="config-form">
+          ${flags.map(([keyName, label]) => `<label class="check"><input type="checkbox" name="${keyName}" ${detailView.config[keyName] ? "checked" : ""}> ${label}</label>`).join("")}
+          <button class="primary" type="submit">Save configuration</button>
+        </form>
+        <form id="release-form" class="form-grid">
+          <input name="version" placeholder="1.0.5" required>
+          <input name="notes" placeholder="Release notes" required>
+          <button class="primary" type="submit">Publish update</button>
+        </form>
+        <div class="actions">
+          <button class="ghost" id="revoke-btn" type="button">Revoke</button>
+        </div>
+      </div>
+      <div>
+        <h4>History</h4>
+        ${(detailView.audit || []).slice(-8).map((entry) => `<p class="log muted">${entry.timestamp.slice(11, 19)} ${escapeHtml(entry.action)}</p>`).join("") || `<p class="muted">No audit yet.</p>`}
+        ${(detailView.logs || []).slice(-6).map((entry) => `<p class="log ${entry.level === "warn" ? "warn" : "muted"}">${escapeHtml(entry.message)}</p>`).join("")}
+      </div>
+    </div>`;
   terminalManage.querySelector("#config-form").onsubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;

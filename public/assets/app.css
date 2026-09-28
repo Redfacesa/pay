@@ -309,12 +309,28 @@ h3 { font-size: 15px; }
 .error { color: var(--bad); min-height: 1.2em; font-size: 14px; }
 .wait-copy { font-size: 22px; line-height: 1.3; letter-spacing: -0.03em; }
 
-.admin { max-width: 1100px; margin: 0 auto; padding: 28px 20px 64px; }
+.admin { max-width: 1280px; margin: 0 auto; padding: 28px 24px 64px; }
 .admin header { display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 22px; }
 .admin header a { color: var(--accent); text-decoration: none; }
 .admin h1 { margin: 0; font-size: 32px; letter-spacing: -0.04em; }
-.cards, .split { display: grid; gap: 12px; }
-.cards { grid-template-columns: repeat(5, 1fr); margin-bottom: 16px; }
+.cards { display: grid; gap: 12px; grid-template-columns: repeat(5, 1fr); margin-bottom: 16px; }
+.ops {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 0.85fr;
+  gap: 8px 28px;
+  align-items: start;
+}
+.ops > .panel:nth-child(1),
+.ops > .panel:nth-child(2) { grid-column: span 3; }
+.ops-tx,
+.ops-detail { grid-column: span 6; }
+.ops > .panel:nth-child(n + 5) { grid-column: span 2; }
 .card, .panel, .terminal {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
   border: 1px solid var(--line);
@@ -326,7 +342,29 @@ h3 { font-size: 15px; }
 }
 .card span { display: block; color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
 .card strong { display: block; margin-top: 8px; font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
-.split { grid-template-columns: 1.4fr 0.8fr; align-items: start; }
+.admin .form-grid,
+.admin .refund {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.admin .form-grid button,
+.admin .refund button,
+.admin #config-form button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  min-width: 180px;
+  width: auto;
+  padding: 12px 20px;
+}
+.admin #config-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+.admin .actions .ghost { min-width: 96px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); vertical-align: top; }
 th { color: var(--muted); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; }
@@ -403,8 +441,23 @@ tr.selected { background: rgba(255, 138, 30, 0.1); }
 .log { font-size: 13px; margin: 4px 0; }
 .check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
 
+@media (max-width: 1100px) {
+  .detail-grid { grid-template-columns: 1fr 1fr; }
+  .detail-grid > :last-child { grid-column: 1 / -1; }
+  .ops { grid-template-columns: 1fr 1fr; }
+  .ops > .panel:nth-child(1),
+  .ops > .panel:nth-child(2),
+  .ops > .panel:nth-child(n + 5) { grid-column: span 1; }
+  .ops-tx,
+  .ops-detail { grid-column: span 2; }
+  .cards { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 899px) {
-  .split, .cards { grid-template-columns: 1fr; }
+  .cards { grid-template-columns: 1fr; }
+  .ops { grid-template-columns: 1fr; }
+  .detail-grid,
+  .detail-grid > :last-child { grid-template-columns: 1fr; grid-column: auto; }
+  .admin #config-form { grid-template-columns: 1fr 1fr; }
   .amount { font-size: 46px; }
   .shift-total { font-size: 42px; }
   .stage { order: 1; }
